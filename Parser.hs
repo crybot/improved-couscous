@@ -49,7 +49,7 @@ grammar = do
   p <- production
   ps <-
     many
-      (do newline
+      (do some newline
           production)
   many newline
   return (p : ps)

@@ -25,26 +25,8 @@ satisfies p = do
     then return x
     else empty
 
-digit :: Parser Char
-digit = satisfies isDigit
-
 char :: Char -> Parser Char
 char x = satisfies (x ==)
-
-notChar :: Char -> Parser Char
-notChar x = satisfies (x /=)
-
-nat :: Parser Int
-nat = do
-  ns <- some digit
-  return $ read ns
-
-int :: Parser Int
-int =
-  do char '-'
-     n <- nat
-     return (-n)
-     <|> nat
 
 letter :: Parser Char
 letter = satisfies isLetter
@@ -81,13 +63,8 @@ token = enclosed space space
 
 string :: String -> Parser String
 string [] = token $ return []
-string (x:xs) = token $ do
-  char x
-  string xs
-  return (x : xs)
-
-natural :: Parser Int
-natural = token nat
-
-integer :: Parser Int
-integer = token int
+string (x:xs) =
+  token $ do
+    char x
+    string xs
+    return (x : xs)
