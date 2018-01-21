@@ -1,8 +1,13 @@
 module Main where
-import Parser
+
 import ParsePrimitives
+import Parser
 
 main :: IO ()
 main = do
-    contents <- getContents
-    print $ parseGrammar contents
+  contents <- getContents
+  let ps = parseGrammar contents
+  putStrLn "BEFORE"
+  putStrLn . showGrammar $ ps
+  putStrLn "AFTER"
+  (putStrLn . showGrammar . regularize) ps

@@ -22,3 +22,28 @@ an alphabetic character followed by zero or more alphanumeric characters
 ``` ::= ``` and an arbitrary sequence of expressions alternated 
 by the character ``` | ```
 
+
+## Left Recursion
+Currently the parser provides the ability to eliminate (direct) left recursion, 
+the following is an example of that behaviour:
+
+### Before
+```
+<S> ::= <expr> 
+<expr> ::= <expr> "+" <term>  | <expr> "-" <term>  | <term> 
+<term> ::= <term> "*" <factor>  | <term> "/" <factor>  | <factor> 
+<factor> ::= "(" <expr> ")"  | <int> 
+```
+
+### After
+```
+<S> ::= <expr> 
+<expr'> ::= "+" <term> <expr'> 
+<expr'> ::= "-" <term> <expr'> 
+<expr> ::= <term> <expr'> 
+<term'> ::= "*" <factor> <term'> 
+<term'> ::= "/" <factor> <term'> 
+<term> ::= <factor> <term'> 
+<factor> ::= "(" <expr> ")"  | <int> 
+```
+

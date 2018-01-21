@@ -1,9 +1,8 @@
 module ParsePrimitives where
 
-import Control.Applicative ((<|>), empty, many, some)
+import Control.Applicative (Alternative, (<|>), empty, many, some)
 import Control.Monad.State
 import Data.Char
-
 type Parser a = StateT String [] a
 
 parse :: Parser a -> String -> [(a, String)]
@@ -42,6 +41,9 @@ identifier = do
 
 literal :: Parser Char
 literal = satisfies isPrint
+
+except :: String -> Parser Char
+except cs = satisfies (not . (`elem` cs))
 
 space :: Parser ()
 space = do

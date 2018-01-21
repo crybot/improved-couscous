@@ -9,23 +9,42 @@ import ParsePrimitives
 data Symbol
   = Terminal String
   | NonTerminal String
-  deriving (Show)
+  deriving (Show, Eq)
 
 type Expr = [Symbol]
 
 data Production =
   Production Symbol
              [Expr]
-  deriving (Show)
+  deriving (Show, Eq)
 
 type Grammar = [Production]
+
+showSymbol :: Symbol -> String
+showSymbol (Terminal x) = "\"" ++ x ++ "\""
+showSymbol (NonTerminal x) = "<" ++ x ++ ">"
+
+showExpr :: Expr -> String
+showExpr = foldr (((++) . (++ " ")) . showSymbol) ""
+
+showExprs :: [Expr] -> String
+showExprs [] = ""
+showExprs [x] = showExpr x
+showExprs (x:xs) = showExpr x ++ " | " ++ showExprs xs
+
+showProduction :: Production -> String
+showProduction (Production s exps) = showSymbol s ++ " ::= " ++ showExprs exps
+
+showGrammar :: Grammar -> String
+showGrammar = unlines . map showProduction
 
 nonTerminal :: Parser Symbol
 nonTerminal =
   token $ enclosed (char '<') (char '>') (NonTerminal <$> identifier)
 
 terminal :: Parser Symbol
-terminal = token $ enclosed (char '\"') (char '\"') (Terminal <$> some literal)
+terminal =
+  token $ enclosed (char '\"') (char '\"') (Terminal <$> some (except ['\"']))
 
 symbol :: Parser Symbol
 symbol = terminal <|> nonTerminal
@@ -60,3 +79,28 @@ parseGrammar g =
     [] -> []
     ((v, ""):_) -> v
     _ -> error "parse error"
+
+appendChar :: Char -> Symbol -> Symbol
+appendChar c (Terminal x) = Terminal (x ++ [c])
+appendChar c (NonTerminal x) = NonTerminal (x ++ [c])
+
+startsWith :: Symbol -> Expr -> Bool
+startsWith _ [] = False
+startsWith s exp = s == head exp
+
+isLeftRecursiveP :: Production -> Bool
+isLeftRecursiveP (Production name exps) = any (startsWith name) exps
+
+rightRecursiveP :: Production -> [Production]
+rightRecursiveP (Production name exps) = map replace exps
+  where
+    replace exp
+      | startsWith name exp = Production name' [tail exp ++ [name']]
+      | otherwise = Production name [exp ++ [name']]
+    name' = appendChar '\'' name
+
+regularize :: Grammar -> Grammar
+regularize [] = []
+regularize (x:xs)
+  | isLeftRecursiveP x = rightRecursiveP x ++ regularize xs
+  | otherwise = x : regularize xs
